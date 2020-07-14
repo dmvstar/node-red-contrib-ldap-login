@@ -15,7 +15,7 @@ sudo npm install -g node-red
 ```
 2. Go to your node-RED conf directory (basically `~/.node-red`)
 ```sh
-npm install node-red-contrib-activedirectory
+npm install node-red-contrib-ldap-lagin
 ```
 3. There you go! You can run Node-RED with:
 ```sh
@@ -25,7 +25,7 @@ node-red
 Documentation
 --------------
 + [Connection](#connection)
-+ [findUser](#finduser)
++ [login](#login)
 
 ---------------------------------------
 
@@ -41,8 +41,8 @@ Every node requires LDAP configuration/credentials to create an instance of the 
 
 ![image of node credentials](images/node_credentials.png)
 
-<a id="finduser"></a>
-### findUser
+<a id="login"></a>
+### login
 
 ![image of node finduser](images/node_finduser.png)
 
@@ -50,7 +50,9 @@ Connects to a Microsoft Active Directory and returns the user corresponding to t
 
 __Inputs__
 
-+ `msg.payload` {string}: the AD username of the user we want to get information. It also works with DN.
++ `msg.payload` {JSON Object}: the AD username and password of the user we want to get information. It also works with DN.
+        payload.username - username in format username@domain.com
+        payload.password - password for username
 + `msg.ad_attributes` {JSON Object}: the attributes we want to return for users and groups. By default:
 ```json
 {
