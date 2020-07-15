@@ -73,7 +73,7 @@ module.exports = function(RED) {
               shape: "dot",
               text: "login error"
             });
-            msg.payload = { user: cUsername, login: false };
+            msg.payload = { user: cUsername, login: false, message: error.message };
             node.send(msg);
             //node.error('ERROR login: ' + error.message);
           } else {
@@ -88,7 +88,7 @@ module.exports = function(RED) {
                 //console.log(error.message);} else{console.log('1 client disconnected');
               }
             });
-            msg.payload = { user: cUsername, login: true };
+            msg.payload = { user: cUsername, login: true, message: '' };
             node.send(msg);
           }
         });
