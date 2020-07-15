@@ -47,27 +47,6 @@ module.exports = function (RED) {
 
       try {
 
-        var isTemplatedUrl = (node.filter || "").indexOf("{{") != -1;
-        var attributes = node.attributes.replace(/ /g, '').split(",");
-
-        if (isTemplatedUrl) {
-          node.filter = '' + mustache.render(node.filter, msg);
-        }
-
-        console.log(node.filter);
-        var opts = {
-          filter: node.filter, //'(&(objectCategory=Person)(objectClass=User)(samaccountname=' + fUsername + '))',
-          scope: 'sub',
-          attributes: attributes, //['objectGUID', 'emailAddress', 'departmentNumber', 'title', 'userPrincipalName', 'memberOf', 'sn', 'givenName', 'mail']
-        };
-/*
-        console.log('--------------------------------------');
-        console.log(node.baseDN);
-        console.log(node.filter);
-        console.log(attributes);
-        console.log(opts);
-        console.log('--------------------------------------');
-*/
         var client = ldap.createClient({
           url: node.url,
           timeout: 5000,
@@ -109,34 +88,50 @@ module.exports = function (RED) {
               text: "search"
             });
 
-            client.search(node.baseDN /*'dc=ukrgas, dc=bank, dc=local'*/, opts, function (error, search) {
-/*              
-              console.log('Searching.....');
-              console.log(node.baseDN);
-              console.log(opts);
-*/
-              search.on('searchEntry', function (entry) {
-                if (entry.object) {
-                  console.log('entry: %j ' + JSON.stringify(entry.object));
-                  msg.payload = { user: fUsername, find: true, message: entry.object };
-                  node.send(msg);
-                } else {
-                  msg.payload = { user: fUsername, find: false, message: "No object" };
-                  node.send(msg);
-                }
-                client.unbind( function (error) {
-                  //if (error) console.log(error.message); else  console.log('1 client disconnected');
-                });
-              });
+            var isTemplatedUrl = (node.filter || "").indexOf("{{") != -1;
+            var attributes = node.attributes.replace(/ /g, '').split(",");
+            var filter = node.filter;
 
-              search.on('error', function (error) {
-                console.error('error: ' + error.message);
-                client.unbind( function (error) {
-                  //if (error) console.log(error.message); else  console.log('1 client disconnected');
-                });
-                msg.payload = { user: fUsername, find: false, message: "Search Error " + error.message };
-                node.send(msg);
-              });
+            if (isTemplatedUrl) {
+              filter = '' + mustache.render(filter, msg);
+            }
+  
+            var opts = {
+              filter: filter, //'(&(objectCategory=Person)(objectClass=User)(samaccountname=' + fUsername + '))',
+              scope: 'sub',
+              attributes: attributes, //['objectGUID', 'emailAddress', 'departmentNumber', 'title', 'userPrincipalName', 'memberOf', 'sn', 'givenName', 'mail']
+            };   
+
+             client.search(node.baseDN /*'dc=ukrgas, dc=bank, dc=local'*/, opts, function (error, search) {
+
+                    var vresult = false;
+                    var eobject = {};
+
+                    search.on('searchEntry', function(entry) {
+                        //console.log('---searchEntry');                        
+                        if(entry.object){
+                            vresult = true;
+                            eobject = entry.object;                            
+                        }                       
+                    });
+                    search.on('searchReference', function(referral) {
+                        //console.log('---searchReference');
+                        //console.log('referral: ' + referral.uris.join());
+                    });                    
+                    search.on('error', function(error) {
+                        //console.log('---error');
+                        //console.error('error: ' + error.message);
+                        msg.payload = { user: fUsername, find: false, message: "Search Error " + error.message };
+                        node.send(msg);
+                    });
+                    search.on('end', function(result) {
+                        //console.log('---end');
+                        //console.log('status: ' + result.status);
+                        //console.log('---result '+vresult);
+                        client.unbind(function(error) {if(error){console.log(error.message);});
+                        msg.payload = { user: fUsername, find: vresult, message: eobject };
+                        node.send(msg);
+                    });
 
             });
 
