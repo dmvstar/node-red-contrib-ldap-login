@@ -23,7 +23,8 @@
   "homepage": "https://github.com/dmvstar/node-red-contrib-ldap-login#readme",
   "node-red": {
     "nodes": {
-      "login-user": "./nodes/login-user.js" 
+      "login-user": "./nodes/login-user.js",
+      "find-user": "./nodes/find-user.js"
     }
   },
   "dependencies": {
