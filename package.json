@@ -1,14 +1,14 @@
 {
   "name": "node-red-contrib-ldap-login",
-  "version": "0.0.9",
-  "description": "Node-RED node for Microsoft Active Directory.",
+  "version": "0.0.10",
+  "description": "Node-RED node for Microsoft Active Directory (LDAP).",
   "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dmvstar/node-red-contrib-ldap-login.git"
   },
   "keywords": [
-    "node-red",	
+    "node-red",
     "node",
     "ad",
     "active",
@@ -16,7 +16,7 @@
     "ldapjs",
     "ldap"
   ],
-  "author": "StarDust",
+	"author": "StarDust",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/dmvstar/node-red-contrib-ldap-login/issues"

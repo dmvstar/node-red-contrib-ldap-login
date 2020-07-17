@@ -15,7 +15,7 @@ sudo npm install -g node-red
 ```
 2. Go to your node-RED conf directory (basically `~/.node-red`)
 ```sh
-npm install node-red-contrib-ldap-lagin
+npm install node-red-contrib-ldap-login
 ```
 3. There you go! You can run Node-RED with:
 ```sh
