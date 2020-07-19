@@ -2,6 +2,7 @@ var mustache = require('mustache');
 
 module.exports = function (RED) {
   function loginUserNode(config) {
+
     RED.nodes.createNode(this, config);
 
     var node = this;
@@ -10,7 +11,7 @@ module.exports = function (RED) {
     node.baseDN = config.baseDN;
     node.filter = config.filter;
     node.attributes = config.attributes;
-    
+
     // we get the credentials
     var cUsername = this.credentials.username;
     var cPassword = this.credentials.password;
@@ -52,6 +53,7 @@ module.exports = function (RED) {
           timeout: 5000,
           connectTimeout: 10000
         });
+        
         node.status({
           fill: "green",
           shape: "dot",
@@ -95,43 +97,45 @@ module.exports = function (RED) {
             if (isTemplatedUrl) {
               filter = '' + mustache.render(filter, msg);
             }
-  
+
             var opts = {
               filter: filter, //'(&(objectCategory=Person)(objectClass=User)(samaccountname=' + fUsername + '))',
               scope: 'sub',
               attributes: attributes, //['objectGUID', 'emailAddress', 'departmentNumber', 'title', 'userPrincipalName', 'memberOf', 'sn', 'givenName', 'mail']
-            };   
+            };
 
-             client.search(node.baseDN /*'dc=ukrgas, dc=bank, dc=local'*/, opts, function (error, search) {
+            client.search(node.baseDN /*'dc=ukrgas, dc=bank, dc=local'*/, opts, function (error, search) {
 
-                    var vresult = false;
-                    var eobject = {};
+              var vresult = false;
+              var eobject = {};
 
-                    search.on('searchEntry', function(entry) {
-                        //console.log('---searchEntry');                        
-                        if(entry.object){
-                            vresult = true;
-                            eobject = entry.object;                            
-                        }                       
-                    });
-                    search.on('searchReference', function(referral) {
-                        //console.log('---searchReference');
-                        //console.log('referral: ' + referral.uris.join());
-                    });                    
-                    search.on('error', function(error) {
-                        //console.log('---error');
-                        //console.error('error: ' + error.message);
-                        msg.payload = { user: fUsername, find: false, message: "Search Error " + error.message };
-                        node.send(msg);
-                    });
-                    search.on('end', function(result) {
-                        //console.log('---end');
-                        //console.log('status: ' + result.status);
-                        //console.log('---result '+vresult);
-                        client.unbind(function(error) {if(error){console.log(error.message);});
-                        msg.payload = { user: fUsername, find: vresult, message: eobject };
-                        node.send(msg);
-                    });
+              search.on('searchEntry', function (entry) {
+                //console.log('---searchEntry');                        
+                if (entry.object) {
+                  vresult = true;
+                  eobject = entry.object;
+                }
+              });
+              search.on('searchReference', function (referral) {
+                //console.log('---searchReference');
+                //console.log('referral: ' + referral.uris.join());
+              });
+              search.on('error', function (error) {
+                //console.log('---error');
+                //console.error('error: ' + error.message);
+                msg.payload = { user: fUsername, find: false, message: "Search Error " + error.message };
+                node.send(msg);
+              });
+              search.on('end', function (result) {
+                //console.log('---end');
+                //console.log('status: ' + result.status);
+                //console.log('---result '+vresult);
+                client.unbind(function (error) {
+                  if (error) { console.log(error.message); } 
+                });
+                msg.payload = { user: fUsername, find: vresult, message: eobject };
+                node.send(msg);
+              });
 
             });
 
@@ -158,4 +162,5 @@ module.exports = function (RED) {
       }
     }
   });
+
 };
