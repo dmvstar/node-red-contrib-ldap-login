@@ -1,4 +1,15 @@
-module.exports = function(RED) {
+module.exports = function (RED) {
+
+
+  function sendErrorMessage(node, text) {
+    node.status({
+        fill: 'red',
+        shape: 'ring',
+        text: text
+    });
+    node.error(text, msg);
+  }
+
   function loginUserNode(config) {
     RED.nodes.createNode(this, config);
 
@@ -10,25 +21,30 @@ module.exports = function(RED) {
     var cUsername = this.credentials.username;
     var cPassword = this.credentials.password;
 
-    node.on("input", function(msg) {
+    console.log("0[" + cUsername + "][" + cPassword + "]");
+
+    node.on("input", function (msg) {
+      var chkUsername = "";
+      var chkPassword = "";
+
       node.status({
         fill: "blue",
         shape: "ring",
-        text: "connecting"
+        text: "connecting",
       });
       // import ldapjs
       var ldap = require("ldapjs");
 
-      if (msg.payload.username) cUsername = msg.payload.username;
-      if (msg.payload.password) cPassword = msg.payload.password;
+      if (msg.payload.username) chkUsername = msg.payload.username;
+      if (msg.payload.password) chkPassword = msg.payload.password;
 
-      //console.log('['+cUsername+']['+cPassword+']');
+      console.log("1[" + chkUsername + "][" + chkPassword + "]");
 
       var adConfig = {
         url: node.url,
         baseDN: node.baseDN,
         username: cUsername,
-        password: cPassword
+        password: cPassword,
       };
 
       // set attributes if defined
@@ -41,29 +57,57 @@ module.exports = function(RED) {
         adConfig.tlsOptions = JSON.parse(JSON.stringify(msg.tlsOptions));
       }
 
+      if (chkUsername === undefined || chkUsername.length === 0) {
+        var text = "Empty Login";
+        node.status({
+          fill: "red",
+          shape: "dot",
+          text: text,
+        });
+        console.log("3[" + chkUsername + "][" + chkPassword + "]" + text);
+        msg.payload = { user: chkUsername, login: false, message: text };
+        node.send(msg);
+        return;
+      } else {
+        if (chkPassword === undefined || chkPassword.length === 0) {
+          var text = "Empty Password";
+          node.status({
+            fill: "red",
+            shape: "dot",
+            text: text,
+          });
+          console.log("[4" + chkUsername + "][" + chkPassword + "]" + text);
+          msg.payload = { user: chkUsername, login: false, message: text };
+          node.send(msg);
+          return;
+        }
+      }
+
+      console.log('--- try to bind --- ['+chkUsername+']');
+
       try {
         var client = ldap.createClient({
           url: node.url,
           timeout: 5000,
-          connectTimeout: 10000
+          connectTimeout: 10000,
         });
         node.status({
           fill: "green",
           shape: "dot",
-          text: "connected"
+          text: "connected",
         });
 
-        client.bind(cUsername, cPassword, function(error) {
+        client.bind(chkUsername, chkPassword, function (error) {
           //console.log('--- try to bind --- ['+username+']');
           node.status({
             fill: "blue",
             shape: "ring",
-            text: "querying"
+            text: "querying",
           });
 
           if (error) {
             //console.log(error.message);
-            client.unbind(function(error) {
+            client.unbind(function (error) {
               if (error) {
                 //console.log(error.message);} else{console.log('1 client disconnected');
               }
@@ -71,9 +115,13 @@ module.exports = function(RED) {
             node.status({
               fill: "red",
               shape: "dot",
-              text: "login error"
+              text: "login error",
             });
-            msg.payload = { user: cUsername, login: false, message: error.message };
+            msg.payload = {
+              user: chkUsername,
+              login: false,
+              message: error.message,
+            };
             node.send(msg);
             //node.error('ERROR login: ' + error.message);
           } else {
@@ -81,14 +129,14 @@ module.exports = function(RED) {
             node.status({
               fill: "green",
               shape: "dot",
-              text: "login"
+              text: "login",
             });
-            client.unbind(function(error) {
+            client.unbind(function (error) {
               if (error) {
                 //console.log(error.message);} else{console.log('1 client disconnected');
               }
             });
-            msg.payload = { user: cUsername, login: true, message: '' };
+            msg.payload = { user: chkUsername, login: true, message: "" };
             node.send(msg);
           }
         });
@@ -96,7 +144,7 @@ module.exports = function(RED) {
         node.status({
           fill: "red",
           shape: "dot",
-          text: "connexion error"
+          text: "connexion error",
         });
         node.error("ERROR connecting: " + e.message);
       }
@@ -106,11 +154,11 @@ module.exports = function(RED) {
   RED.nodes.registerType("login-user", loginUserNode, {
     credentials: {
       username: {
-        type: "text"
+        type: "text",
       },
       password: {
-        type: "password"
-      }
-    }
+        type: "password",
+      },
+    },
   });
 };
